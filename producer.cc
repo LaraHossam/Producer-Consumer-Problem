@@ -12,25 +12,18 @@
 #include <ctime>
 #include <random>
 #include <math.h>
-#define MAX_BUFFERS 20
-
+#define MAX_BUFFERS 11 // A slot in the buffer for every commodity
 using namespace std;
-
-// struct shared_memory {
-//     char buf [MAX_BUFFERS] [256];
-//     int buffer_index;
-//     int buffer_print_index;
-// };
 
 
 struct Commodity{
-    string name;
+    char name[20];
     vector<double> price;
-    double currPrice = 0.00;
-    double avgPrice = 0.00;
-    Commodity(string name): name(name)
-    {
-    };
+    double currPrice;
+    double avgPrice;
+    // Commodity(char* name): name(name)
+    // {
+    // };
 };
 
 struct shared_memory {
@@ -39,7 +32,6 @@ struct shared_memory {
     int buffer_print_index;
 };
 
-enum commod {GOLD, SILVER,CRUDEOIL,NATURALGAS,ALUMINUM,COPPER,NICKEL,LEAD,ZINC,METHANOIL,COTTON};
 
 
 int main(int argc,char*argv[])
@@ -193,25 +185,6 @@ int main(int argc,char*argv[])
         generator.seed(time(0)); // To produce different random numbers according to a variable seed
         normal_distribution<double> distribution(stod(argv[2]),stod(argv[3]));
         double currPrice = abs(distribution(generator));
-        // cout << currPrice << endl;
-        
-
-        // Commodity c = Commodity(argv[1]);
-        // c.price.push_back(currPrice);
-        // c.currPrice = currPrice;
-        // if(c.price.size()>4)
-        // {
-        //     double avg = 0;
-        //     avg = (c.price[c.price.size()-1]+c.price[c.price.size()-2]+c.price[c.price.size()-3]+c.price[c.price.size()-4])/4;
-        //     c.avgPrice = avg;
-        // }
-
-        // cout << "Commodity added to buffer." << endl;
-        // cout << "Commodity name: " << c.name << endl;
-        // cout << "Commodity currPrice: " << c.currPrice << endl;
-        // cout << "Commodity avgPrice: " << c.avgPrice << endl;
-        // cout << "----------------------" << endl;
-
 
         int fn;
         fn = semop(empty_sem,&wait,1);
@@ -227,20 +200,39 @@ int main(int argc,char*argv[])
             cout << "\033[1;31mError in semop\033[0m\n";
         }        
         
-        // Critical section
-        // sprintf (shared_mem_ptr -> buf [shared_mem_ptr -> buffer_index], "(%d): %s\n", getpid (), buf);
-        // (shared_mem_ptr -> buffer_index)++;
-        // if (shared_mem_ptr -> buffer_index == MAX_BUFFERS)
-        //     shared_mem_ptr -> buffer_index = 0;
 
-        
+    //    enum commod {GOLD, SILVER,CRUDEOIL,NATURALGAS,ALUMINUM,COPPER,NICKEL,LEAD,ZINC,METHANOIL,COTTON};
+
+        if(strcmp(argv[1],"GOLD")==0) shared_mem_ptr -> buffer_index = 0;
+        if(strcmp(argv[1],"SILVER")==0) shared_mem_ptr -> buffer_index = 1;
+        if(strcmp(argv[1],"CRUDEOIL")==0) shared_mem_ptr -> buffer_index = 2;
+        if(strcmp(argv[1],"NATURALGAS")==0) shared_mem_ptr -> buffer_index = 3;
+        if(strcmp(argv[1],"ALUMINUM")==0) shared_mem_ptr -> buffer_index = 4;
+        if(strcmp(argv[1],"COPPER")==0) shared_mem_ptr -> buffer_index = 5;
+        if(strcmp(argv[1],"NICKEL")==0) shared_mem_ptr -> buffer_index = 6;
+        if(strcmp(argv[1],"LEAD")==0) shared_mem_ptr -> buffer_index = 7;
+        if(strcmp(argv[1],"ZINC")==0) shared_mem_ptr -> buffer_index = 8;
+        if(strcmp(argv[1],"METHANOIL")==0) shared_mem_ptr -> buffer_index = 9;
+        if(strcmp(argv[1],"COTTON")==0) shared_mem_ptr -> buffer_index = 10;
+
+
         shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].currPrice=currPrice;
-        shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].name.assign(argv[1]);
+        shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].currPrice++;
+        // shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price.push_back(currPrice);
+        if(shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price.size()>4)
+        {
+            double avg = 1;
+            // avg = (shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price[shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price.size()-1]+shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price[shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price.size()-2]+shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price[shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price.size()-3]+shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price[shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price.size()-4])/4;
+            // avg = shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].price.back();
+            shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].avgPrice = avg;
+        }
+        strcpy(shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].name,argv[1]);
         cout << "Commodity added to buffer." << endl;
-        // cout << "Commodity name: " <<shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].name << endl;
+        cout << "Commodity name: " <<shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].name << endl;
         cout << "Commodity currPrice: " <<shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].currPrice << endl;
+        cout << "Commodity avgPrice: " <<shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].avgPrice << endl;
 
-        (shared_mem_ptr -> buffer_index)++;
+        // (shared_mem_ptr -> buffer_index)++;
         if (shared_mem_ptr -> buffer_index == MAX_BUFFERS)
             shared_mem_ptr -> buffer_index = 0;
 

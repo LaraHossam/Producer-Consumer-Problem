@@ -13,18 +13,20 @@
 #include <sys/shm.h> 
 #include <sys/sem.h>
 #define N 11
-#define MAX_BUFFERS 20
+#define MAX_BUFFERS 11
 using namespace std;
 
 struct Commodity{
-    string name;
+    char name[20];
     vector<double> price;
     double currPrice = 0.00;
     double avgPrice = 0.00;
-    Commodity(string name): name(name)
-    {
-    };
+    // Commodity(char* name): name(name)
+    // {
+    // };
 };
+
+
 
 
 /*
@@ -34,7 +36,7 @@ struct Commodity{
 */
 
 struct shared_memory {
-    char buf [MAX_BUFFERS] [256];
+    struct Commodity buf[MAX_BUFFERS];
     int buffer_index;
     int buffer_print_index;
 };
@@ -192,7 +194,18 @@ int main(int argc,char*argv[])
         ###########  ACCESSING MEMORY ##########
         ########################################
         */
-        printf ("%s", shared_mem_ptr -> buf [shared_mem_ptr -> buffer_print_index]);
+        // cout << "Commodity name: " <<shared_mem_ptr -> buf[shared_mem_ptr -> buffer_print_index].name << endl;
+        // cout << "Commodity currPrice: " <<shared_mem_ptr -> buf[shared_mem_ptr -> buffer_print_index].currPrice << endl;
+        cout << "+-------------------------------------+" << endl;
+        cout << "| Currency     | Price     | AvgPrice |" << endl;
+        for(int i =0;i<N;i++)
+        {
+            shared_mem_ptr -> buffer_print_index = i;
+            cout << "| " << shared_mem_ptr -> buf[shared_mem_ptr -> buffer_print_index].name << "     |" << shared_mem_ptr -> buf[shared_mem_ptr -> buffer_print_index].currPrice << "  |" << shared_mem_ptr ->  buf[shared_mem_ptr -> buffer_print_index].avgPrice << "    |" << endl;
+        }
+        cout << "+-------------------------------------+" << endl;
+        printf("\e[1;1H\e[2J");
+
 
         /*
         ########################################
@@ -208,14 +221,6 @@ int main(int argc,char*argv[])
     //  commodities.insert(commodities.begin(),c);
     // }
 
-        // cout << "+-------------------------------------+" << endl;
-        // cout << "| Currency     | Price     | AvgPrice |" << endl;
-        // for(int i =0;i<N;i++)
-        // {
-        //     cout << "| " << commodities[i].name << "|" << commodities[i].currPrice << "|" << commodities[i].avgPrice << "|" << endl;
-        // }
-        // cout << "+-------------------------------------+" << endl;
-        // printf("\e[1;1H\e[2J");
 
 
 
