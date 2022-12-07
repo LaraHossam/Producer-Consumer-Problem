@@ -1,8 +1,10 @@
 .PHONY: clean
 
-producer:   clean
+producer:   	
+	rm -f producer
 	g++ -o producer producer.cc
-consumer:   clean
+consumer:   	
+	rm -f consumer
 	g++ -o consumer consumer.cc
 
 clean:
