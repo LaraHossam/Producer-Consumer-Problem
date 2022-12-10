@@ -1,5 +1,5 @@
-    // CREDITS: LARA HOSSAMELDIN MOSTAFA ABDOU
-    // ID: 6853
+// CREDITS: LARA HOSSAMELDIN MOSTAFA ABDOU
+// ID: 6853
 
 #include <stdio.h>
 #include <string>
@@ -43,8 +43,8 @@ typedef struct Commodity Commodity;
 
 struct shared_memory {
     struct Commodity buf[MAX_BUFFERS];
-    int buffer_index;
-    int buffer_print_index;
+    int in;
+    int out;
 };
 
 
@@ -85,9 +85,9 @@ int main(int argc,char*argv[])
 
     /* shmat, the calling process can attach the shared memory segment
     identified by shm_id*/
-    struct shared_memory *shared_mem_ptr;
-    shared_mem_ptr = (struct shared_memory *) shmat (shm_id, NULL, 0);
-    if (shared_mem_ptr == (struct shared_memory *) -1)
+    struct shared_memory *mem_ptr;
+    mem_ptr = (struct shared_memory *) shmat (shm_id, NULL, 0);
+    if (mem_ptr == (struct shared_memory *) -1)
     {
         cout << "\033[1;31mError in shmat\033[0m\n";
     }
@@ -155,7 +155,7 @@ int main(int argc,char*argv[])
     }
     int full_sem;
     full_sem = semget (key, 1, 0660 | IPC_CREAT);
-    if (empty_sem == -1)
+    if (full_sem == -1)
     {
         cout << "\033[1;31mError in semget\033[0m\n";
     }
@@ -172,14 +172,13 @@ int main(int argc,char*argv[])
     ###########  INITIALIZATION   ##########
     ########################################
     */
-    shared_mem_ptr -> buffer_index = shared_mem_ptr -> buffer_index = 0;
-    shared_mem_ptr -> buffer_index = shared_mem_ptr -> buffer_print_index = 0;
+    mem_ptr -> in = mem_ptr -> in = 0;
+    mem_ptr -> in = mem_ptr -> out = 0;
     init = semctl (mutex_sem, 0, SETVAL, 1);
     if (init == -1)
     {
         cout << "\033[1;31mError in semctl\033[0m\n";
     }
-    /* INITIALIZATION of WAIT and SIGNAL system calls*/
     struct sembuf wait, signal;
     wait.sem_num = signal.sem_num = 0;
     wait.sem_flg = signal.sem_flg = 0;
@@ -227,8 +226,8 @@ int main(int argc,char*argv[])
         ########################################
         */
         char name [20];
-        strcpy(name,shared_mem_ptr->buf[shared_mem_ptr->buffer_print_index].name);
-        double currPrice = shared_mem_ptr->buf[shared_mem_ptr->buffer_print_index].currPrice;
+        strcpy(name,mem_ptr->buf[mem_ptr->out].name);
+        double currPrice = mem_ptr->buf[mem_ptr->out].currPrice;
         
         // Updating array
         int j;
@@ -271,9 +270,9 @@ int main(int argc,char*argv[])
         
 
        
-        (shared_mem_ptr -> buffer_print_index)++;
-        if (shared_mem_ptr -> buffer_print_index == MAX_BUFFERS)
-           shared_mem_ptr -> buffer_print_index = 0;
+        (mem_ptr -> out)++;
+        if (mem_ptr -> out == MAX_BUFFERS)
+           mem_ptr -> out = 0;
 
         /*
         ########################################
@@ -332,7 +331,7 @@ int main(int argc,char*argv[])
 
         cout << "+---------------------------------------+" << endl;
         string msg = "\033[1;31m";
-        msg += to_string(shared_mem_ptr -> buffer_print_index);
+        msg += to_string(mem_ptr -> out);
         msg += "\033[0m\n";
         cout << msg;
         printf("\e[1;1H\e[2J");
@@ -350,8 +349,6 @@ int main(int argc,char*argv[])
             cout << "\033[1;31mError in semop\033[0m\n";
         }    
     }
-
-
 
 
 

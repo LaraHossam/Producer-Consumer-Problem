@@ -1,3 +1,6 @@
+// CREDITS: LARA HOSSAMELDIN MOSTAFA ABDOU
+// ID: 6853
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -12,6 +15,7 @@
 #include <ctime>
 #include <random>
 #include <math.h>
+
 #define MAX_BUFFERS 200 // Buffer size
 using namespace std;
 
@@ -30,8 +34,8 @@ typedef struct Commodity Commodity;
 
 struct shared_memory {
     struct Commodity buf[MAX_BUFFERS];
-    int buffer_index;
-    int buffer_print_index;
+    int in;
+    int out;
 };
 
 
@@ -54,7 +58,8 @@ int main(int argc,char*argv[])
     /* Defining a key of type key_t defined in file sys/types.h 
     for requesting resources such as shared memory, message queues
     and semaphores. Length of key is system dependent, so we don't 
-    use int.*/   
+    use int.*/  
+
     key_t key;  
     key = ftok ("./d", 12345);
     if (key == -1)
@@ -65,6 +70,7 @@ int main(int argc,char*argv[])
     /* Get shared memory, shmget gets you a shared memory segment
     associated with the given key obtained with ftok. IPC_CREAT a new
     shared memory segment is created. */
+
     int shm_id;
     shm_id = shmget (key, sizeof (struct shared_memory), 0660 | IPC_CREAT);
     if (shm_id == -1)
@@ -74,9 +80,10 @@ int main(int argc,char*argv[])
 
     /* shmat, the calling process can attach the shared memory segment
     identified by shm_id*/
-    struct shared_memory *shared_mem_ptr;
-    shared_mem_ptr = (struct shared_memory *) shmat (shm_id, NULL, 0);
-    if (shared_mem_ptr == (struct shared_memory *) -1)
+
+    struct shared_memory *mem_ptr;
+    mem_ptr = (struct shared_memory *) shmat (shm_id, NULL, 0);
+    if (mem_ptr == (struct shared_memory *) -1)
     {
         cout << "\033[1;31mError in shmat\033[0m\n";
     }
@@ -143,7 +150,7 @@ int main(int argc,char*argv[])
     }
     int full_sem;
     full_sem = semget (key, 1, 0660 | IPC_CREAT);
-    if (empty_sem == -1)
+    if (full_sem == -1)
     {
         cout << "\033[1;31mError in semget\033[0m\n";
     }
@@ -159,13 +166,12 @@ int main(int argc,char*argv[])
     ###########  INITIALIZATION   ##########
     ########################################
     */
-    // shared_mem_ptr -> buffer_index = shared_mem_ptr -> buffer_print_index = 0;
     init = semctl (mutex_sem, 0, SETVAL, 1);
     if (init == -1)
     {
         cout << "\033[1;31mError in semctl\033[0m\n";
     }
-    /* INITIALIZATION of WAIT and SIGNAL system calls*/
+
     struct sembuf wait, signal;
     wait.sem_num = signal.sem_num = 0;
     wait.sem_flg = signal.sem_flg = 0;
@@ -210,8 +216,6 @@ int main(int argc,char*argv[])
         cout << msg;
 
 
-
-
         int fn;
         fn = semop(empty_sem,&wait,1);
         if (fn == -1)
@@ -244,12 +248,12 @@ int main(int argc,char*argv[])
         msg+= "\033[0m\n";
         cout << msg;
         
-        strcpy(shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].name,argv[1]);
-        shared_mem_ptr -> buf[shared_mem_ptr -> buffer_index].currPrice=currPrice;
+        strcpy(mem_ptr -> buf[mem_ptr -> in].name,argv[1]);
+        mem_ptr -> buf[mem_ptr -> in].currPrice=currPrice;
 
-        (shared_mem_ptr -> buffer_index)++;
-        if (shared_mem_ptr -> buffer_index == MAX_BUFFERS)
-            shared_mem_ptr -> buffer_index = 0;
+        (mem_ptr -> in)++;
+        if (mem_ptr -> in == MAX_BUFFERS)
+            mem_ptr -> in = 0;
 
 
 
