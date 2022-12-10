@@ -12,12 +12,14 @@
 #include <sys/ipc.h>
 #include <sys/shm.h> 
 #include <sys/sem.h>
+#include <sys/time.h>
 #include <ctime>
 #include <random>
 #include <math.h>
 
 #define MAX_BUFFERS 200 // Buffer size
 using namespace std;
+
 
 struct Commodity{
     char name[20];
@@ -182,7 +184,7 @@ int main(int argc,char*argv[])
 
 
 
-     if(argc != 5 || (strcmp(argv[1],"GOLD") && strcmp(argv[1],"SILVER") && strcmp(argv[1],"CRUDEOIL") && strcmp(argv[1],"NATURALGAS") && strcmp(argv[1],"ALUMINIUM") && strcmp(argv[1],"COPPER") && strcmp(argv[1],"NICKEL") && strcmp(argv[1],"LEAD") && strcmp(argv[1],"ZINC") && strcmp(argv[1],"MENTHAOIL") && strcmp(argv[1],"COTTON") ))
+     if(argc != 5 || (strcmp(argv[1],"GOLD") && strcmp(argv[1],"SILVER") && strcmp(argv[1],"CRUDEOIL") && strcmp(argv[1],"NATURALGAS") && strcmp(argv[1],"ALUMINUM") && strcmp(argv[1],"COPPER") && strcmp(argv[1],"NICKEL") && strcmp(argv[1],"LEAD") && strcmp(argv[1],"ZINC") && strcmp(argv[1],"MENTHAOIL") && strcmp(argv[1],"COTTON") ))
     {
         printf("Incorrect format. Please use:\n./producer <commodity-name>> <price-mean> <price-std> <sleep-interval>\n");
         return 1;
@@ -195,94 +197,99 @@ int main(int argc,char*argv[])
     ########################################
     */
 
+
     while (true) {
         
-        struct timespec start;
+    struct timeval tv;
+    struct timezone tz;
+    struct tm *tm;
+    default_random_engine generator;
+    generator.seed(time(0)); // To produce different random numbers according to a variable seed
+    double var = sqrt(stod(argv[3]));
+    normal_distribution<double> distribution(stod(argv[2]),var);
+    double currPrice = abs(distribution(generator));
+    string temp;
+    gettimeofday(&tv, &tz);
+    tm=localtime(&tv.tv_sec);
+    temp = to_string(tv.tv_usec).substr(0, 3);
+    string msg = "\033[1;31m";
+    msg+= "[" + to_string(tm->tm_mday) + "/" + to_string(tm->tm_mon) +"/" + to_string(tm->tm_year+1900)+ " " + to_string(tm->tm_hour)+":"+to_string(tm->tm_min)+":"+to_string(tm->tm_sec) + "."+temp +"] ";
+    msg += argv[1];
+    msg+= ": generating a new value ";
+    msg += to_string(currPrice);
+    msg+= "\033[0m\n";
+    cout << msg;
 
 
-        default_random_engine generator;
-        generator.seed(time(0)); // To produce different random numbers according to a variable seed
-        double var = sqrt(stod(argv[3]));
-        normal_distribution<double> distribution(stod(argv[2]),var);
-        double currPrice = abs(distribution(generator));
-
-        clock_gettime( CLOCK_REALTIME, &start);
-        string msg = "\033[1;31m";
-        // msg += to_string(start.nsec);
-        msg += argv[1];
-        msg+= ": generating a new value ";
-        msg += to_string(currPrice);
-        msg+= "\033[0m\n";
-        cout << msg;
-
-
-        int fn;
-        fn = semop(empty_sem,&wait,1);
-        if (fn == -1)
-        {
-            cout << "\033[1;31mError in semop\033[0m\n";
-        }
-
-        clock_gettime( CLOCK_REALTIME, &start);
-        msg = "\033[1;31m";
-        // msg += to_string(start.nsec);
-        msg += argv[1];
-        msg+= ": trying to get mutex on shared buffer";
-        msg+= "\033[0m\n";
-        cout << msg;
-
-        fn = semop(mutex_sem,&wait,1);
-        if (fn == -1)
-        {
-            cout << "\033[1;31mError in semop\033[0m\n";
-        }        
-        
-
-        clock_gettime( CLOCK_REALTIME, &start);
-        msg = "\033[1;31m";
-        // msg += to_string(start.nsec);
-        msg += argv[1];
-        msg+= ": placing ";
-        msg += to_string(currPrice);
-        msg += " on shared buffer";
-        msg+= "\033[0m\n";
-        cout << msg;
-        
-        strcpy(mem_ptr -> buf[mem_ptr -> in].name,argv[1]);
-        mem_ptr -> buf[mem_ptr -> in].currPrice=currPrice;
-
-        (mem_ptr -> in)++;
-        if (mem_ptr -> in == MAX_BUFFERS)
-            mem_ptr -> in = 0;
-
-
-
-        fn = semop(mutex_sem,&signal,1);
-        if (fn == -1)
-        {
-            cout << "\033[1;31mError in semop\033[0m\n";
-        }        
-    
-	    fn = semop(full_sem,&signal,1);
-        if (fn == -1)
-        {
-            cout << "\033[1;31mError in semop\033[0m\n";
-        }      
-
-
-        clock_gettime( CLOCK_REALTIME, &start);
-        msg = "\033[1;31m";
-        // msg += to_string(start.nsec);
-        msg += argv[1];
-        msg+= ": sleeping for ";
-        msg += argv[4];
-        msg +=" ms";
-        msg+= "\033[0m\n";
-        cout << msg;
-         
-        sleep(stoi(argv[4]));
+    int fn;
+    fn = semop(empty_sem,&wait,1);
+    if (fn == -1)
+    {
+        cout << "\033[1;31mError in semop\033[0m\n";
     }
- 
+    gettimeofday(&tv, &tz);
+    tm=localtime(&tv.tv_sec);
+    temp = to_string(tv.tv_usec).substr(0, 3);
+    msg = "\033[1;31m";
+    msg+= "[" + to_string(tm->tm_mday) + "/" + to_string(tm->tm_mon) +"/" + to_string(tm->tm_year+1900)+ " " + to_string(tm->tm_hour)+":"+to_string(tm->tm_min)+":"+to_string(tm->tm_sec) + "."+temp +"] ";
+    msg += argv[1];
+    msg+= ": trying to get mutex on shared buffer";
+    msg+= "\033[0m\n";
+    cout << msg;
+
+    fn = semop(mutex_sem,&wait,1);
+    if (fn == -1)
+    {
+        cout << "\033[1;31mError in semop\033[0m\n";
+    }        
+    gettimeofday(&tv, &tz);
+    tm=localtime(&tv.tv_sec);
+    temp = to_string(tv.tv_usec).substr(0, 3);
+    msg = "\033[1;31m";
+    msg+= "[" + to_string(tm->tm_mday) + "/" + to_string(tm->tm_mon) +"/" + to_string(tm->tm_year+1900)+ " " + to_string(tm->tm_hour)+":"+to_string(tm->tm_min)+":"+to_string(tm->tm_sec) + "."+temp +"] ";
+    msg += argv[1];
+    msg+= ": placing ";
+    msg += to_string(currPrice);
+    msg += " on shared buffer";
+    msg+= "\033[0m\n";
+    cout << msg;
+    
+    strcpy(mem_ptr -> buf[mem_ptr -> in].name,argv[1]);
+    mem_ptr -> buf[mem_ptr -> in].currPrice=currPrice;
+
+    (mem_ptr -> in)++;
+    if (mem_ptr -> in == MAX_BUFFERS)
+        mem_ptr -> in = 0;
+
+
+
+    fn = semop(mutex_sem,&signal,1);
+    if (fn == -1)
+    {
+        cout << "\033[1;31mError in semop\033[0m\n";
+    }        
+
+    fn = semop(full_sem,&signal,1);
+    if (fn == -1)
+    {
+        cout << "\033[1;31mError in semop\033[0m\n";
+    }      
+
+    gettimeofday(&tv, &tz);
+    tm=localtime(&tv.tv_sec);
+    temp = to_string(tv.tv_usec).substr(0, 3);
+    msg = "\033[1;31m";
+    msg+= "[" + to_string(tm->tm_mday) + "/" + to_string(tm->tm_mon) +"/" + to_string(tm->tm_year+1900)+ " " + to_string(tm->tm_hour)+":"+to_string(tm->tm_min)+":"+to_string(tm->tm_sec) + "."+temp +"] ";
+    msg += argv[1];
+    msg+= ": sleeping for ";
+    msg += argv[4];
+    msg +=" ms";
+    msg+= "\033[0m\n";
+    cout << msg;
+        
+    usleep(stoi(argv[4])*1000);
+}
+
     
     return 0;
 }

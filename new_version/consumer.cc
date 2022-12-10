@@ -301,8 +301,8 @@ int main(int argc,char*argv[])
                 cCodeEnd = "\033[0m";;}
             else{
                 cPrice = "-";
-                cCodeP = "";
-                cCodeEnd = "";}
+                cCodeP = "\033[1;34m";
+                cCodeEnd = "\033[0m";}
             if (com[i].avgColor == 1){
                 cAvg = "↑";
                 cCodeA = "\033[1;32m";
@@ -313,15 +313,14 @@ int main(int argc,char*argv[])
                 cCodeEnd = "\033[0m";}
             else{
                 cAvg = "-";
-                cCodeA = "";
-                cCodeEnd = "";}
+                cCodeA = "\033[1;34m";
+                cCodeEnd = "\033[0m";}
 
             char priceC[10];
             char avgC[10];
             sprintf(priceC,"%7.2lf",com[i].currPrice);
             sprintf(avgC,"%7.2lf",com[i].avgPrice);
 
-            // price = cCodeP + to_string(com[i].currPrice) + cPrice + cCodeEnd;
             price = cCodeP + priceC + cPrice + cCodeEnd;
 
             avgPrice = cCodeA + avgC + cAvg + cCodeEnd;
