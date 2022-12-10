@@ -17,7 +17,7 @@
 #include <random>
 #include <math.h>
 
-#define MAX_BUFFERS 200 // Buffer size
+#define MAX_BUFFERS 1000 // Buffer size
 using namespace std;
 
 
@@ -38,6 +38,7 @@ struct shared_memory {
     struct Commodity buf[MAX_BUFFERS];
     int in;
     int out;
+    int size;
 };
 
 
@@ -131,8 +132,8 @@ int main(int argc,char*argv[])
     {
         cout << "\033[1;31mError in semget\033[0m\n";
     }
-    /* Giving mutex semaphore initial value of MAX_BUFFERS. */
-    init =  semctl (empty_sem, 0, SETVAL, MAX_BUFFERS) ;        
+    /* Giving mutex semaphore initial value of mem_ptr->size. */
+    init =  semctl (empty_sem, 0, SETVAL, mem_ptr->size) ;        
     if (init == -1)
     {
         cout << "\033[1;31mError in semctl\033[0m\n";
@@ -258,7 +259,7 @@ int main(int argc,char*argv[])
     mem_ptr -> buf[mem_ptr -> in].currPrice=currPrice;
 
     (mem_ptr -> in)++;
-    if (mem_ptr -> in == MAX_BUFFERS)
+    if (mem_ptr -> in == mem_ptr->size)
         mem_ptr -> in = 0;
 
 

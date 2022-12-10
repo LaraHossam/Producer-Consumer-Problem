@@ -16,7 +16,7 @@
 #include<sstream> 
 
 #define N 11
-#define MAX_BUFFERS 200
+#define MAX_BUFFERS 1000 // Buffer size
 using namespace std;
 
 
@@ -45,6 +45,7 @@ struct shared_memory {
     struct Commodity buf[MAX_BUFFERS];
     int in;
     int out;
+    int size;
 };
 
 
@@ -134,8 +135,8 @@ int main(int argc,char*argv[])
     {
         cout << "\033[1;31mError in semget\033[0m\n";
     }
-    /* Giving mutex semaphore initial value of MAX_BUFFERS. */
-    init =  semctl (empty_sem, 0, SETVAL, MAX_BUFFERS) ;        
+    /* Giving mutex semaphore initial value of mem_ptr->size. */
+    init =  semctl (empty_sem, 0, SETVAL, mem_ptr->size) ;        
     if (init == -1)
     {
         cout << "\033[1;31mError in semctl\033[0m\n";
@@ -159,7 +160,7 @@ int main(int argc,char*argv[])
     {
         cout << "\033[1;31mError in semget\033[0m\n";
     }
-    /* Giving mutex semaphore initial value of MAX_BUFFERS. */
+    /* Giving mutex semaphore initial value of mem_ptr->size. */
     init =  semctl (full_sem, 0, SETVAL, 0) ;        
     if (init == -1)
     {
@@ -174,6 +175,12 @@ int main(int argc,char*argv[])
     */
     mem_ptr -> in = mem_ptr -> in = 0;
     mem_ptr -> in = mem_ptr -> out = 0;
+    if(argc!=2)
+    {
+         printf("Incorrect format. Please use:\n./consumer <bounded-buffer-size>\n");
+        return 1;
+    }
+    mem_ptr -> size = stoi(argv[1]);
     init = semctl (mutex_sem, 0, SETVAL, 1);
     if (init == -1)
     {
@@ -271,7 +278,7 @@ int main(int argc,char*argv[])
 
        
         (mem_ptr -> out)++;
-        if (mem_ptr -> out == MAX_BUFFERS)
+        if (mem_ptr -> out == mem_ptr->size)
            mem_ptr -> out = 0;
 
         /*
