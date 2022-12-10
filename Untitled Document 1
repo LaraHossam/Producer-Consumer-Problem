@@ -1,0 +1,27 @@
++-------------------------------------+
+| Currency     | Price     | AvgPrice |
+| GOLD         |0  	   |0         |	
+| SILVER       |0          |0         |
+| CRUDEOIL     |0          |0         |
+| NATURALGAS   |0          |0         |
+| ALUMINUM     |0  	   |0         |
+| COPPER       |0  	   |0         |
+| NICKEL       |0  	   |0         |
+| LEAD         |0  	   |0         |
+| ZINC         |1.23302    |0         |
+| METHANOIL    |0          |0         |
+| COTTON       |0          |0         |
++-------------------------------------+
+
+
+        strcpy(com[0].name,"GOLD         ");
+        strcpy(com[1].name,"SILVER       ");
+        strcpy(com[2].name,"CRUDEOIL     ");
+        strcpy(com[3].name,"NATURALGAS   ");
+        strcpy(com[4].name,"ALUMINUM     ");
+        strcpy(com[5].name,"COPPER       ");
+        strcpy(com[6].name,"NICKEL       ");
+        strcpy(com[7].name,"LEAD         ");
+        strcpy(com[8].name,"ZINC         ");
+        strcpy(com[9].name,"METHANOIL    ");
+        strcpy(com[10].name,"COTTON       ");

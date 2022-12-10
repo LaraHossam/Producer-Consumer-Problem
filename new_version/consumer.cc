@@ -13,8 +13,10 @@
 #include <sys/shm.h> 
 #include <sys/sem.h>
 #include <string.h>
+#include<sstream> 
+
 #define N 11
-#define MAX_BUFFERS 11
+#define MAX_BUFFERS 200
 using namespace std;
 
 
@@ -22,42 +24,14 @@ using namespace std;
 struct Commodity{
     char name[20];
     double currPrice;
+    double histPrice[4];
+    int histIndex;
     double avgPrice;
-    Commodity()
-    {
-            currPrice=0.0;
-            avgPrice=0.0;
-    };
-    Commodity* makeArray(Commodity* com)
-    {
-        strcpy(com[0].name,"GOLD         ");
-        strcpy(com[1].name,"SILVER       ");
-        strcpy(com[2].name,"CRUDEOIL     ");
-        strcpy(com[3].name,"NATURALGAS   ");
-        strcpy(com[4].name,"ALUMINUM     ");
-        strcpy(com[5].name,"COPPER       ");
-        strcpy(com[6].name,"NICKEL       ");
-        strcpy(com[7].name,"LEAD         ");
-        strcpy(com[8].name,"ZINC         ");
-        strcpy(com[9].name,"METHANOIL    ");
-        strcpy(com[10].name,"COTTON       ");
-
-        for(int i=0;i<MAX_BUFFERS;i++)
-        {
-            com[i].avgPrice=0.00;
-            com[i].currPrice=0.00;
-            // for (int j =0;j<4;j++)
-            // {
-            //     com[i].p[j]=0;
-            // }
-        }
-        
-
-
-        return com;
-    };
+    int priceColor;
+    int avgColor;
 };
 typedef struct Commodity Commodity;
+
 
 
 
@@ -68,16 +42,19 @@ typedef struct Commodity Commodity;
 */
 
 struct shared_memory {
-    struct Commodity buf[20];
+    struct Commodity buf[MAX_BUFFERS];
     int buffer_index;
     int buffer_print_index;
 };
 
 
 
+
+
 int main(int argc,char*argv[])
 {
-     cout << "\033[1;32mCONSUMER STARTED WORKING.\033[0m\n";
+     
+    cout << "\033[1;32mCONSUMER STARTED WORKING.\033[0m\n";
 
     /*
     ########################################
@@ -90,7 +67,7 @@ int main(int argc,char*argv[])
     and semaphores. Length of key is system dependent, so we don't 
     use int.*/   
     key_t key;  
-    key = ftok (".", 12345);
+    key = ftok ("./d", 12345);
     if (key == -1)
     {
         cout << "\033[1;31mError in ftok\033[0m\n";
@@ -114,8 +91,7 @@ int main(int argc,char*argv[])
     {
         cout << "\033[1;31mError in shmat\033[0m\n";
     }
-    Commodity *com = new (shared_mem_ptr) Commodity;
-    Commodity *p = com->makeArray(com);
+
 
     /*
     ########################################
@@ -196,6 +172,7 @@ int main(int argc,char*argv[])
     ###########  INITIALIZATION   ##########
     ########################################
     */
+    shared_mem_ptr -> buffer_index = shared_mem_ptr -> buffer_index = 0;
     shared_mem_ptr -> buffer_index = shared_mem_ptr -> buffer_print_index = 0;
     init = semctl (mutex_sem, 0, SETVAL, 1);
     if (init == -1)
@@ -209,11 +186,26 @@ int main(int argc,char*argv[])
     wait.sem_op = -1;   // Value that should be added to the semaphore
     signal.sem_op = 1;  // Value that should be added to the semaphore
     
- 
+
+    vector<string> names = {"ALUMINUM     ","COPPER       ","COTTON       ","CRUDEOIL     ","GOLD         ","LEAD         ","METHANOIL    ","NATURALGAS   ","NICKEL       ","SILVER       ","ZINC         "};
+    struct Commodity com[N];
+    for(int i=0;i<N;i++)
+    {
+        strcpy(com[i].name,names[i].c_str());
+        com[i].currPrice=0.00;
+        for (int j = 0; j < 4;j++)
+        {
+            com[i].histPrice[j]=0.00;
+        }
+        com[i].histIndex = 0;
+        com[i].avgPrice = 0.00;
+        com[i].priceColor = -1;
+        com[i].avgColor = -1;
+    }
+
 
 
      while (1) {  
-
 
         int fn;
         fn = semop(full_sem,&wait,1);
@@ -222,40 +214,6 @@ int main(int argc,char*argv[])
             cout << "\033[1;31mError in semop\033[0m\n";
         }
 
-        /*
-        ########################################
-        ###########  ACCESSING MEMORY ##########
-        ########################################
-        */
-        // cout << "Commodity name: " <<shared_mem_ptr -> buf[shared_mem_ptr -> buffer_print_index].name << endl;
-        // cout << "Commodity currPrice: " <<shared_mem_ptr -> buf[shared_mem_ptr -> buffer_print_index].currPrice << endl;
-        cout << "+-------------------------------------+" << endl;
-        cout << "| Currency          | Price     | AvgPrice |" << endl;
-        for(int i =0;i<N;i++)
-        {
-            shared_mem_ptr -> buffer_print_index = i;
-            cout << "| " << shared_mem_ptr -> buf[shared_mem_ptr -> buffer_print_index].name << "     |" << shared_mem_ptr -> buf[shared_mem_ptr -> buffer_print_index].currPrice << "  |" << shared_mem_ptr ->  buf[shared_mem_ptr -> buffer_print_index].avgPrice << "    |" << endl;
-        }
-        cout << "+-------------------------------------+" << endl;
-        printf("\e[1;1H\e[2J");
-
-
-        /*
-        ########################################
-        ###########  PRINTING RESULTS ##########
-        ########################################
-        */
-
-    // vector<string> commodities_names {"GOLD", "SILVER","CRUDEOIL","NATURALGAS","ALUMINUM","COPPER","NICKEL","LEAD","ZINC","METHANOIL","COTTON"};
-    // vector<Commodity> commodities;
-    // for(int i=0;i<N;i++)
-    // {
-    //  Commodity c = Commodity(commodities_names[i]);
-    //  commodities.insert(commodities.begin(),c);
-    // }
-
-
-
 
         fn = semop(mutex_sem,&wait,1);
         if (fn == -1)
@@ -263,11 +221,121 @@ int main(int argc,char*argv[])
             cout << "\033[1;31mError in semop\033[0m\n";
         }        
         
+        /*
+        ########################################
+        ###########  ACCESSING MEMORY ##########
+        ########################################
+        */
+        char name [20];
+        strcpy(name,shared_mem_ptr->buf[shared_mem_ptr->buffer_print_index].name);
+        double currPrice = shared_mem_ptr->buf[shared_mem_ptr->buffer_print_index].currPrice;
+        
+        // Updating array
+        int j;
+        if(strcmp(name,"ALUMINUM")==0) j = 0;
+        if(strcmp(name,"COPPER")==0) j = 1;
+        if(strcmp(name,"COTTON")==0) j = 2;
+        if(strcmp(name,"CRUDEOIL")==0) j = 3;
+        if(strcmp(name,"GOLD")==0) j = 4;
+        if(strcmp(name,"LEAD")==0) j = 5;
+        if(strcmp(name,"METHANOIL")==0) j = 6;
+        if(strcmp(name,"NATURALGAS")==0) j = 7;
+        if(strcmp(name,"NICKEL")==0) j = 8;
+        if(strcmp(name,"SILVER")==0) j = 9;
+        if(strcmp(name,"ZINC")==0) j = 10;
+
+        if (com[j].currPrice < currPrice)
+            com[j].priceColor = 1; // GREEN
+        else
+            com[j].priceColor = 0; // RED
+        com[j].currPrice = currPrice;
+
+        com[j].histPrice[com[j].histIndex]=currPrice;
+        com[j].histIndex = (com[j].histIndex+1)%4;
+        int count = 0;
+        double sum=0;
+        for (int k=0;k<4;k++)
+        {
+            if(com[j].histPrice[k]!=0)
+            {
+                count++;
+                sum += com[j].histPrice[k];
+            }
+        }
+        double newAvg = sum/count;
+        if (com[j].avgPrice < newAvg)
+            com[j].avgColor = 1; // GREEN
+        else
+            com[j].avgColor = 0; // RED
+        com[j].avgPrice = newAvg;
+        
+
+       
         (shared_mem_ptr -> buffer_print_index)++;
         if (shared_mem_ptr -> buffer_print_index == MAX_BUFFERS)
            shared_mem_ptr -> buffer_print_index = 0;
 
+        /*
+        ########################################
+        ###########  PRINTING RESULTS ##########
+        ########################################
+        */
 
+        cout << "+---------------------------------------+" << endl;
+        cout << "| Currency     | Price    |  AvgPrice   |" << endl;
+        string cPrice;
+        string cAvg;
+        string cCodeP;
+        string cCodeA;
+        string cCodeEnd = "";
+        string price;
+        string avgPrice;
+        for(int i =0;i<N;i++)
+        {
+            if (com[i].priceColor == 1){
+                cPrice = "↑";
+                cCodeP = "\033[1;32m";
+                cCodeEnd = "\033[0m";}
+            else if(com[i].priceColor == 0){
+                cPrice =  "↓";
+                cCodeP = "\033[1;31m";
+                cCodeEnd = "\033[0m";;}
+            else{
+                cPrice = "-";
+                cCodeP = "";
+                cCodeEnd = "";}
+            if (com[i].avgColor == 1){
+                cAvg = "↑";
+                cCodeA = "\033[1;32m";
+                cCodeEnd = "\033[0m";}
+            else if(com[i].avgColor == 0){
+                cAvg =  "↓";
+                cCodeA = "\033[1;31m";
+                cCodeEnd = "\033[0m";}
+            else{
+                cAvg = "-";
+                cCodeA = "";
+                cCodeEnd = "";}
+
+            char priceC[10];
+            char avgC[10];
+            sprintf(priceC,"%7.2lf",com[i].currPrice);
+            sprintf(avgC,"%7.2lf",com[i].avgPrice);
+
+            // price = cCodeP + to_string(com[i].currPrice) + cPrice + cCodeEnd;
+            price = cCodeP + priceC + cPrice + cCodeEnd;
+
+            avgPrice = cCodeA + avgC + cAvg + cCodeEnd;
+
+            cout << "| " << com[i].name << "|" << price << "  |    " << avgPrice << " |\n" ;
+        }
+
+        cout << "+---------------------------------------+" << endl;
+        string msg = "\033[1;31m";
+        msg += to_string(shared_mem_ptr -> buffer_print_index);
+        msg += "\033[0m\n";
+        cout << msg;
+        printf("\e[1;1H\e[2J");
 
 
 
