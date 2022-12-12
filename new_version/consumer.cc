@@ -111,7 +111,7 @@ int main(int argc,char*argv[])
         cout << "\033[1;31mError in semget\033[0m\n";
     }
     /* Giving mutex semaphore initial value of 0 to lock it. */
-    int init =  semctl (mutex_sem, 0, SETVAL, 0) ;        
+    int init =  semctl (mutex_sem, 0, SETVAL, 1) ;        
     if (init == -1)
     {
         cout << "\033[1;31mError in semctl\033[0m\n";
