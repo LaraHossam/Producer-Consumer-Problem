@@ -35,7 +35,6 @@ typedef struct Commodity Commodity;
 
 
 struct shared_memory {
-    struct Commodity buf[MAX_BUFFERS];
     int in;
     int out;
     int size;
@@ -64,7 +63,7 @@ int main(int argc,char*argv[])
     use int.*/  
 
     key_t key;  
-    key = ftok ("./d", 12345);
+    key = ftok ("./d", 12222);
     if (key == -1)
     {
         cout << "\033[1;31mError in ftok\033[0m\n";
@@ -73,9 +72,8 @@ int main(int argc,char*argv[])
     /* Get shared memory, shmget gets you a shared memory segment
     associated with the given key obtained with ftok. IPC_CREAT a new
     shared memory segment is created. */
-
     int shm_id;
-    shm_id = shmget (key, sizeof (struct shared_memory), 0660 | IPC_CREAT);
+    shm_id = shmget (key, sizeof(shared_memory), 0660);
     if (shm_id == -1)
     {
         cout << "\033[1;31mError in shmget\033[0m\n";
@@ -83,13 +81,42 @@ int main(int argc,char*argv[])
 
     /* shmat, the calling process can attach the shared memory segment
     identified by shm_id*/
-
-    struct shared_memory *mem_ptr;
-    mem_ptr = (struct shared_memory *) shmat (shm_id, NULL, 0);
-    if (mem_ptr == (struct shared_memory *) -1)
+    shared_memory *mem_ptr;
+    mem_ptr = (shared_memory *) shmat (shm_id, NULL, 0);
+    if (mem_ptr == (shared_memory *) -1)
     {
         cout << "\033[1;31mError in shmat\033[0m\n";
     }
+
+    /* Now, we define actual shared memory*/
+
+    key_t key2;  
+    key2 = ftok ("./d", 12345);
+    if (key2 == -1)
+    {
+        cout << "\033[1;31mError in ftok\033[0m\n";
+    }
+
+    /* Get shared memory, shmget gets you a shared memory segment
+    associated with the given key obtained with ftok. IPC_CREAT a new
+    shared memory segment is created. */
+    int shm_id2;
+    shm_id2 = shmget (key2, sizeof(Commodity)*mem_ptr->size, 0660);
+    if (shm_id2 == -1)
+    {
+        cout << "\033[1;31mError in shmget\033[0m\n";
+    }
+
+    /* shmat, the calling process can attach the shared memory segment
+    identified by shm_id*/
+    Commodity *buf_ptr;
+    buf_ptr = (Commodity*) shmat (shm_id2, NULL, 0);
+    if (buf_ptr == (Commodity *) -1)
+    {
+        cout << "\033[1;31mError in shmat\033[0m\n";
+    }
+
+
 
     /*
     ########################################
@@ -256,8 +283,8 @@ int main(int argc,char*argv[])
     msg+= "\033[0m\n";
     cout << msg;
     
-    strcpy(mem_ptr -> buf[mem_ptr -> in].name,argv[1]);
-    mem_ptr -> buf[mem_ptr -> in].currPrice=currPrice;
+    strcpy(buf_ptr[mem_ptr -> in].name,argv[1]);
+    buf_ptr[mem_ptr -> in].currPrice=currPrice;
 
     (mem_ptr -> in)++;
     if (mem_ptr -> in == mem_ptr->size)

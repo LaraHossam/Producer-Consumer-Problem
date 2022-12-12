@@ -21,6 +21,7 @@ using namespace std;
 
 
 
+
 struct Commodity{
     char name[20];
     double currPrice;
@@ -42,20 +43,23 @@ typedef struct Commodity Commodity;
 */
 
 struct shared_memory {
-    struct Commodity buf[MAX_BUFFERS];
     int in;
     int out;
     int size;
 };
 
 
-
-
-
 int main(int argc,char*argv[])
 {
      
     cout << "\033[1;32mCONSUMER STARTED WORKING.\033[0m\n";
+
+    if(argc!=2)
+    {
+         printf("Incorrect format. Please use:\n./consumer <bounded-buffer-size>\n");
+        return 1;
+    }
+    int size = stoi(argv[1]);
 
     /*
     ########################################
@@ -67,8 +71,11 @@ int main(int argc,char*argv[])
     for requesting resources such as shared memory, message queues
     and semaphores. Length of key is system dependent, so we don't 
     use int.*/   
+
+    /* Following memory is to share index in, index out and size of buffer */
+
     key_t key;  
-    key = ftok ("./d", 12345);
+    key = ftok ("./d", 12222);
     if (key == -1)
     {
         cout << "\033[1;31mError in ftok\033[0m\n";
@@ -78,7 +85,7 @@ int main(int argc,char*argv[])
     associated with the given key obtained with ftok. IPC_CREAT a new
     shared memory segment is created. */
     int shm_id;
-    shm_id = shmget (key, sizeof (struct shared_memory), 0660 | IPC_CREAT);
+    shm_id = shmget (key, sizeof(shared_memory), 0660 | IPC_CREAT);
     if (shm_id == -1)
     {
         cout << "\033[1;31mError in shmget\033[0m\n";
@@ -86,9 +93,38 @@ int main(int argc,char*argv[])
 
     /* shmat, the calling process can attach the shared memory segment
     identified by shm_id*/
-    struct shared_memory *mem_ptr;
-    mem_ptr = (struct shared_memory *) shmat (shm_id, NULL, 0);
-    if (mem_ptr == (struct shared_memory *) -1)
+    shared_memory *mem_ptr;
+    mem_ptr = (shared_memory *) shmat (shm_id, NULL, 0);
+    if (mem_ptr == (shared_memory *) -1)
+    {
+        cout << "\033[1;31mError in shmat\033[0m\n";
+    }
+    mem_ptr -> size = size;
+
+    /* Now, we define actual shared memory*/
+
+    key_t key2;  
+    key2 = ftok ("./d", 12345);
+    if (key2 == -1)
+    {
+        cout << "\033[1;31mError in ftok\033[0m\n";
+    }
+
+    /* Get shared memory, shmget gets you a shared memory segment
+    associated with the given key obtained with ftok. IPC_CREAT a new
+    shared memory segment is created. */
+    int shm_id2;
+    shm_id2 = shmget (key2, sizeof(Commodity)*size, 0660 | IPC_CREAT);
+    if (shm_id2 == -1)
+    {
+        cout << "\033[1;31mError in shmget\033[0m\n";
+    }
+
+    /* shmat, the calling process can attach the shared memory segment
+    identified by shm_id*/
+    Commodity *buf_ptr;
+    buf_ptr = (Commodity*) shmat (shm_id2, NULL, 0);
+    if (buf_ptr == (Commodity *) -1)
     {
         cout << "\033[1;31mError in shmat\033[0m\n";
     }
@@ -175,12 +211,6 @@ int main(int argc,char*argv[])
     */
     mem_ptr -> in = mem_ptr -> in = 0;
     mem_ptr -> in = mem_ptr -> out = 0;
-    if(argc!=2)
-    {
-         printf("Incorrect format. Please use:\n./consumer <bounded-buffer-size>\n");
-        return 1;
-    }
-    mem_ptr -> size = stoi(argv[1]);
     init = semctl (mutex_sem, 0, SETVAL, 1);
     if (init == -1)
     {
@@ -233,8 +263,8 @@ int main(int argc,char*argv[])
         ########################################
         */
         char name [20];
-        strcpy(name,mem_ptr->buf[mem_ptr->out].name);
-        double currPrice = mem_ptr->buf[mem_ptr->out].currPrice;
+        strcpy(name,buf_ptr[mem_ptr->out].name);
+        double currPrice = buf_ptr[mem_ptr->out].currPrice;
         
         // Updating array
         int j;
@@ -334,15 +364,12 @@ int main(int argc,char*argv[])
 
             cout << "| " << com[i].name << "|" << price << "  |    " << avgPrice << " |\n" ;
         }
-
         cout << "+---------------------------------------+" << endl;
         string msg = "\033[1;31m";
         msg += to_string(mem_ptr -> out);
         msg += "\033[0m\n";
         cout << msg;
         printf("\e[1;1H\e[2J");
-
-
 
         fn = semop(mutex_sem,&signal,1);
         if (fn == -1)
