@@ -91,7 +91,7 @@ int main(int argc,char*argv[])
     /* Now, we define actual shared memory*/
 
     key_t key2;  
-    key2 = ftok ("./d", 12345);
+    key2 = ftok ("./d", 1);
     if (key2 == -1)
     {
         cout << "\033[1;31mError in ftok\033[0m\n";
@@ -134,14 +134,6 @@ int main(int argc,char*argv[])
     {
         cout << "\033[1;31mError in semget\033[0m\n";
     }
-    /* Giving mutex semaphore initial value of 0 to lock it. */
-
-    // int init =  semctl (mutex_sem, 0, SETVAL, 0) ;        
-    // if (init == -1)
-    // {
-    //     cout << "\033[1;31mError in semctl\033[0m\n";
-    // }
-
 
     /*
     ########################################
@@ -160,12 +152,6 @@ int main(int argc,char*argv[])
     {
         cout << "\033[1;31mError in semget\033[0m\n";
     }
-    // /* Giving mutex semaphore initial value of mem_ptr->size. */
-    // init =  semctl (empty_sem, 0, SETVAL, mem_ptr->size) ;        
-    // if (init == -1)
-    // {
-    //     cout << "\033[1;31mError in semctl\033[0m\n";
-    // }
 
 
     /*
@@ -185,23 +171,12 @@ int main(int argc,char*argv[])
     {
         cout << "\033[1;31mError in semget\033[0m\n";
     }
-    // init =  semctl (full_sem, 0, SETVAL, 0) ;        
-    // if (init == -1)
-    // {
-    //     cout << "\033[1;31mError in semctl\033[0m\n";
-    // }
-
 
     /*
     ########################################
     ###########  INITIALIZATION   ##########
     ########################################
     */
-    // init = semctl (mutex_sem, 0, SETVAL, 1);
-    // if (init == -1)
-    // {
-    //     cout << "\033[1;31mError in semctl\033[0m\n";
-    // }
 
     struct sembuf wait, signal;
     wait.sem_num = signal.sem_num = 0;
@@ -213,12 +188,18 @@ int main(int argc,char*argv[])
 
 
 
-     if(argc != 5 || (strcmp(argv[1],"GOLD") && strcmp(argv[1],"SILVER") && strcmp(argv[1],"CRUDEOIL") && strcmp(argv[1],"NATURALGAS") && strcmp(argv[1],"ALUMINUM") && strcmp(argv[1],"COPPER") && strcmp(argv[1],"NICKEL") && strcmp(argv[1],"LEAD") && strcmp(argv[1],"ZINC") && strcmp(argv[1],"MENTHAOIL") && strcmp(argv[1],"COTTON") ))
+     if(argc != 6 || (strcmp(argv[1],"GOLD") && strcmp(argv[1],"SILVER") && strcmp(argv[1],"CRUDEOIL") && strcmp(argv[1],"NATURALGAS") && strcmp(argv[1],"ALUMINUM") && strcmp(argv[1],"COPPER") && strcmp(argv[1],"NICKEL") && strcmp(argv[1],"LEAD") && strcmp(argv[1],"ZINC") && strcmp(argv[1],"METHANOIL") && strcmp(argv[1],"COTTON") ))
     {
-        printf("Incorrect format. Please use:\n./producer <commodity-name>> <price-mean> <price-std> <sleep-interval>\n");
+        printf("Incorrect format. Please use:\n./producer <commodity-name>> <price-mean> <price-std> <sleep-interval> <buonded-buffer-size>\n");
+        return 1;
+    }
+    if (atoi(argv[5])!=mem_ptr->size)
+    {
+        printf("Bounded Buffer Size doesn't match limit set by consumer (%d) Try again.\n",mem_ptr->size);
         return 1;
     }
 
+    
 
     /*
     ########################################

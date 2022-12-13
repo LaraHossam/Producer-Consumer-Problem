@@ -84,6 +84,7 @@ int main(int argc,char*argv[])
     /* Get shared memory, shmget gets you a shared memory segment
     associated with the given key obtained with ftok. IPC_CREAT a new
     shared memory segment is created. */
+    
     int shm_id;
     shm_id = shmget (key, sizeof(shared_memory), 0660 | IPC_CREAT);
     if (shm_id == -1)
@@ -104,7 +105,7 @@ int main(int argc,char*argv[])
     /* Now, we define actual shared memory*/
 
     key_t key2;  
-    key2 = ftok ("./d", 12345);
+    key2 = ftok ("./d", 1);
     if (key2 == -1)
     {
         cout << "\033[1;31mError in ftok\033[0m\n";
@@ -114,10 +115,10 @@ int main(int argc,char*argv[])
     associated with the given key obtained with ftok. IPC_CREAT a new
     shared memory segment is created. */
     int shm_id2;
-    shm_id2 = shmget (key2, sizeof(Commodity)*size, 0660 | IPC_CREAT);
+    shm_id2 = shmget (key2, sizeof(Commodity)*mem_ptr -> size, 0660 | IPC_CREAT);
     if (shm_id2 == -1)
     {
-        cout << "\033[1;31mError in shmget\033[0m\n";
+        cout << "\033[1;31mError in shmget2\033[0m\n";
     }
 
     /* shmat, the calling process can attach the shared memory segment
@@ -126,7 +127,7 @@ int main(int argc,char*argv[])
     buf_ptr = (Commodity*) shmat (shm_id2, NULL, 0);
     if (buf_ptr == (Commodity *) -1)
     {
-        cout << "\033[1;31mError in shmat\033[0m\n";
+        cout << "\033[1;31mError in shmat2\033[0m\n";
     }
 
 
