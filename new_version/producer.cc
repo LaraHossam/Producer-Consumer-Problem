@@ -38,6 +38,7 @@ struct shared_memory {
     int in;
     int out;
     int size;
+    int terminated;
 };
 
 
@@ -209,6 +210,12 @@ int main(int argc,char*argv[])
 
 
     while (true) {
+    
+    if(mem_ptr->terminated == 1)
+    {
+        cout << "\n\nTerminated Consumer. All shared memory segments deleted."  << endl;
+        exit(1);
+    }
         
     struct timeval tv;
     struct timezone tz;

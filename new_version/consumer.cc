@@ -13,12 +13,12 @@
 #include <sys/shm.h> 
 #include <sys/sem.h>
 #include <string.h>
-#include<sstream> 
+#include<sstream>
+#include <signal.h> 
 
 #define N 11
 #define MAX_BUFFERS 1000 // Buffer size
 using namespace std;
-
 
 
 
@@ -33,26 +33,35 @@ struct Commodity{
 };
 typedef struct Commodity Commodity;
 
-
-
-
-/*
-########################################
-########  SHARED MEMORY STRUCT  ########
-########################################
-*/
-
 struct shared_memory {
     int in;
     int out;
     int size;
+    int terminated;
 };
+
+int shm_id;
+int shm_id2;
+shared_memory *mem_ptr;
+
+// Define the function to be called when ctrl-c (SIGINT) is sent to process
+void signal_callback_handler(int i) {
+    mem_ptr->terminated=1;
+    cout << "\nTerminated Consumer. All shared memory segments deleted."  << endl;
+    if(shmctl(shm_id2, IPC_RMID, 0)==-1)
+    {
+    cout << "\033[1;31mError in removing shmid2.\033[0m\n";
+    }
+    // Terminate program
+    exit(1);
+}
 
 
 int main(int argc,char*argv[])
 {
      
     cout << "\033[1;32mCONSUMER STARTED WORKING.\033[0m\n";
+    signal(SIGINT, signal_callback_handler);
 
     if(argc!=2)
     {
@@ -85,7 +94,6 @@ int main(int argc,char*argv[])
     associated with the given key obtained with ftok. IPC_CREAT a new
     shared memory segment is created. */
     
-    int shm_id;
     shm_id = shmget (key, sizeof(shared_memory), 0660 | IPC_CREAT);
     if (shm_id == -1)
     {
@@ -94,7 +102,6 @@ int main(int argc,char*argv[])
 
     /* shmat, the calling process can attach the shared memory segment
     identified by shm_id*/
-    shared_memory *mem_ptr;
     mem_ptr = (shared_memory *) shmat (shm_id, NULL, 0);
     if (mem_ptr == (shared_memory *) -1)
     {
@@ -114,7 +121,6 @@ int main(int argc,char*argv[])
     /* Get shared memory, shmget gets you a shared memory segment
     associated with the given key obtained with ftok. IPC_CREAT a new
     shared memory segment is created. */
-    int shm_id2;
     shm_id2 = shmget (key2, sizeof(Commodity)*mem_ptr -> size, 0660 | IPC_CREAT);
     if (shm_id2 == -1)
     {
@@ -211,7 +217,7 @@ int main(int argc,char*argv[])
     ########################################
     */
     mem_ptr -> in = mem_ptr -> in = 0;
-    mem_ptr -> in = mem_ptr -> out = 0;
+    mem_ptr ->terminated = 0;
     init = semctl (mutex_sem, 0, SETVAL, 1);
     if (init == -1)
     {
@@ -239,7 +245,6 @@ int main(int argc,char*argv[])
         com[i].priceColor = -1;
         com[i].avgColor = -1;
     }
-
 
 
      while (1) {  
@@ -381,7 +386,9 @@ int main(int argc,char*argv[])
         if (fn == -1)
         {
             cout << "\033[1;31mError in semop\033[0m\n";
-        }    
+        }  
+        
+  
     }
 
 
