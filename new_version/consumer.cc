@@ -216,7 +216,7 @@ int main(int argc,char*argv[])
     ###########  INITIALIZATION   ##########
     ########################################
     */
-    mem_ptr -> in = mem_ptr -> in = 0;
+    mem_ptr -> in = mem_ptr -> out = 0;
     mem_ptr ->terminated = 0;
     init = semctl (mutex_sem, 0, SETVAL, 1);
     if (init == -1)
