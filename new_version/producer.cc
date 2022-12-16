@@ -24,7 +24,7 @@ using namespace std;
 struct Commodity{
     char name[20];
     double currPrice;
-    double histPrice[4];
+    double histPrice[5];
     int histIndex;
     double avgPrice;
     int priceColor;

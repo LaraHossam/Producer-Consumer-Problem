@@ -25,7 +25,7 @@ using namespace std;
 struct Commodity{
     char name[20];
     double currPrice;
-    double histPrice[4];
+    double histPrice[5];
     int histIndex;
     double avgPrice;
     int priceColor;
@@ -296,7 +296,7 @@ int main(int argc,char*argv[])
         com[j].histIndex = (com[j].histIndex+1)%4;
         int count = 0;
         double sum=0;
-        for (int k=0;k<4;k++)
+        for (int k=0;k<5;k++)
         {
             if(com[j].histPrice[k]!=0)
             {
